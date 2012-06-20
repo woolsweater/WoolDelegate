@@ -20,8 +20,6 @@
 NSString * const WoolDelegateHandlerKey = @"HandlerKey";
 /* The NSMethodSignature object for the handler */
 NSString * const WoolDelegateSignatureKey = @"SignatureKey";
-/* The ffi_type list corresponding to the handler's signature */
-NSString * const WoolDelegateFFITypeListKey = @"FFITypeListKey";
 
 @interface WoolDelegate ()
 {
@@ -30,9 +28,6 @@ NSString * const WoolDelegateFFITypeListKey = @"FFITypeListKey";
 }
 
 - (void *) allocate: (size_t)size;
-//- (ffi_type **) buildArgTypeListForSignature: (NSMethodSignature *)sig;
-- (void **) buildArgListForInvocation: (NSInvocation *)invoc;
-//- (ffi_type *) libffi_type_for_objc_encoding: (const char *) str;
 
 - (void)setSignature: (NSMethodSignature *)sig forSelector: (SEL)sel;
 - (NSMethodSignature *)signatureForSelector: (SEL)sel;
@@ -104,7 +99,7 @@ static BOOL method_description_isNULL(struct objc_method_description desc)
     return (desc.types == NULL) && (desc.name == NULL);
 }
 
-static char * procure_encoding_string_for_selector_from_protocol(SEL sel, Protocol * protocol)
+static const char * procure_encoding_string_for_selector_from_protocol(SEL sel, Protocol * protocol)
 {
     static BOOL isReqVals[4] = {NO, NO, YES, YES};
     static BOOL isInstanceVals[4] = {NO, YES, NO, YES};
@@ -128,7 +123,7 @@ static char * procure_encoding_string_for_selector_from_protocol(SEL sel, Protoc
     if( protocol ){
         class_addProtocol([self class], protocol);
         
-        char * types;
+        const char * types;
         types = procure_encoding_string_for_selector_from_protocol(aSelector,
                                                                    protocol);
         
@@ -225,7 +220,7 @@ static char delegator_key;
     // I think bbum has something about this in his post on imp_implementationWithBlock()
     sig = [NSMethodSignature signatureWithObjCTypes: types];
     [self setSignature:sig forSelector:aSelector];
-    free(types);
+    free((void *)types);
     return sig;
 }
 
@@ -245,27 +240,6 @@ typedef void (*genericfunc)(void);
     
     [anInvocation Wool_invokeUsingIMP:handlerIMP];
     
-//    // Get sig from invocation
-//    NSMethodSignature * sig = [anInvocation methodSignature];
-//    // Get info about args from sig:
-//    // * number
-//    // * types (translate to ffi_types)
-//    // * (also return type -> ffi_type)
-//    NSUInteger num_args = [sig numberOfArguments];
-//    //TODO: Cache this shit for each handler.
-//    ffi_type ** arg_types = [self buildArgTypeListForSignature:sig];
-//    ffi_type * ret_type = [self libffi_type_for_objc_encoding:[sig methodReturnType]];
-//    ffi_cif inv_cif;
-//    if( FFI_OK == ffi_prep_cif(&inv_cif, FFI_DEFAULT_ABI, 
-//                               (unsigned int)num_args, ret_type, arg_types) )
-//    {
-//        void ** arg_vals = [self buildArgListForInvocation:anInvocation];
-//        void * ret_val = calloc(1, [sig methodReturnLength]);
-//        ffi_call(&inv_cif, (genericfunc)handlerIMP, ret_val, arg_vals);
-//        [anInvocation setReturnValue:ret_val];
-//        free(ret_val);
-//    }
-    
 }  
 
 // Thanks to Mike Ash for this idea as well.
@@ -276,33 +250,10 @@ typedef void (*genericfunc)(void);
     return [dat mutableBytes];
 }
 
-//- (ffi_type **)buildArgTypeListForSignature: (NSMethodSignature *)sig {
-//    
-//    NSUInteger l = [sig numberOfArguments];
-//    ffi_type ** arg_types = (ffi_type **)[self allocate: sizeof(ffi_type *) * l];
-//    NSUInteger i;
-//    for( i = 0; i < l; i++ ){
-//        arg_types[i] = [self libffi_type_for_objc_encoding:[sig getArgumentTypeAtIndex:i]];
-//    }
-//    
-//    return arg_types;
-//}
-
-//- (void **)buildArgListForInvocation: (NSInvocation *)invoc
-//{
-//    NSMethodSignature * sig = [invoc methodSignature];
-//    NSUInteger num_args = [sig numberOfArguments];
-//    void ** arg_list = [self allocate: sizeof(void *) * num_args];
-//    NSUInteger i;
-//    for(i = 0; i < num_args; i++ ){
-//        NSUInteger arg_size;
-//        NSGetSizeAndAlignment([sig getArgumentTypeAtIndex:i], &arg_size, NULL);
-//        arg_list[i] = [self allocate:arg_size];
-//        [invoc getArgument:arg_list[i] atIndex:i];
-//    }
-//    
-//    return arg_list;
-//}
+- (NSMethodSignature *)signatureForSelector: (SEL)sel
+{
+    return [[self handlerInfoForSelector:sel] objectForKey:WoolDelegateSignatureKey];
+}
 
 - (void)setSignature: (NSMethodSignature *)sig forSelector: (SEL)sel
 {

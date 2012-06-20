@@ -43,20 +43,20 @@ int main (int argc, const char * argv[])
     
     WoolDelegate * d =  [[WoolDelegate alloc] init];
     
-//    test_respondsToInheritedSelector(d);
-//    test_respondsToDefinedSelector(d);
-//    [d addForSelector:@selector(estragon) handler:(GenericBlock)^{ NSLog(@"%d", 10); }];
-//    test_respondsToSetSelector(d);
-//    //[d performSelector:@selector(estragon)];
-//    [d addForSelector:@selector(poireaux:) fromProtocol:@protocol(Allia) handler:(GenericBlock)(^id (NSArray * leek) {
-//        NSLog(@"%@", leek);
-//        return [leek objectAtIndex:0];
-//    })];
-//    NSArray * poireaux_arr = [[NSArray arrayWithObjects:@"Abacus", @"Banana", @"Capuchin", nil] retain];
-//    NSLog(@"%@", poireaux_arr);
-//    id o = [d poireaux:poireaux_arr];
-//    NSLog(@"Result of poireaux: %@", o);
-//    
+    test_respondsToInheritedSelector(d);
+    test_respondsToDefinedSelector(d);
+    [d addForSelector:@selector(estragon) handler:(GenericBlock)^{ NSLog(@"%d", 10); }];
+    test_respondsToSetSelector(d);
+    //[d performSelector:@selector(estragon)];
+    [d addForSelector:@selector(poireaux:) fromProtocol:@protocol(Allia) handler:(GenericBlock)(^id (NSArray * leek) {
+        NSLog(@"%@", leek);
+        return [leek objectAtIndex:0];
+    })];
+    NSArray * poireaux_arr = [[NSArray arrayWithObjects:@"Abacus", @"Banana", @"Capuchin", nil] retain];
+    NSLog(@"%@", poireaux_arr);
+    id o = [d poireaux:poireaux_arr];
+    NSLog(@"Result of poireaux: %@", o);
+    
     [d addForSelector:@selector(oignon:) fromProtocol:@protocol(Allia) handler:(GenericBlock)^(NSString * onion){
         NSLog(@"%@", [onion lowercaseString]);
     }];
@@ -67,6 +67,7 @@ int main (int argc, const char * argv[])
     
     [d pommes:@"Hello, " terre:@"Bird"];
     
+    // Test selector not from protocol; encoding string will have to be constructed
     NSArray * frick_arr = [NSArray arrayWithObjects:@"behemoth", @"leviathan", @"bantam", nil];
     [d addForSelector:@selector(frick:a:frack:) handler:(GenericBlock)(^NSNumber * (BOOL b, int i, NSArray * arr){
         return (b ? [NSNumber numberWithInt:i] : [NSNumber numberWithUnsignedInteger:[arr count]]);

@@ -37,7 +37,7 @@ static char allocations_key;
  * invocation. Steps through each argument in turn and interprets the ObjC
  * type encoding.
  */
-- (ffi_type **) Wool_buildFFIArgTypeList {
+- (ffi_type **)Wool_buildFFIArgTypeList {
 
     NSMethodSignature * sig = [self methodSignature];
     NSUInteger num_used_args = [sig numberOfArguments] - 1;    // Ignore SEL
@@ -58,7 +58,7 @@ static char allocations_key;
 /* Put the values of the arguments to this invocation into the format required
  * by libffi: a list of pointers to pieces of memory containing the values.
  */
-- (void **) Wool_buildArgValList
+- (void **)Wool_buildArgValList
 {
     
     NSMethodSignature * sig = [self methodSignature];
@@ -94,7 +94,7 @@ static char allocations_key;
 
 // Typedef for casting IMP in ffi_call to shut up compiler
 typedef void (*genericfunc)(void);
-- (void) Wool_invokeUsingIMP: (IMP)theIMP {
+- (void)Wool_invokeUsingIMP: (IMP)theIMP {
     
     NSMethodSignature * sig = [self methodSignature];
     NSUInteger num_used_args = [sig numberOfArguments] - 1;    // Ignore SEL
@@ -102,7 +102,8 @@ typedef void (*genericfunc)(void);
     ffi_type * ret_type = libffi_type_for_objc_encoding([sig methodReturnType]);
     ffi_cif inv_cif;
     if( FFI_OK == ffi_prep_cif(&inv_cif, FFI_DEFAULT_ABI, 
-                               (unsigned int)num_used_args, ret_type, arg_types) )
+                               (unsigned int)num_used_args, 
+                               ret_type, arg_types) )
     {
         void ** arg_vals = [self Wool_buildArgValList];
         NSUInteger ret_size = [sig methodReturnLength];
@@ -110,10 +111,10 @@ typedef void (*genericfunc)(void);
         if( ret_size > 0 ){
             ret_val = calloc(1, ret_size);
             if( !ret_val ){
-                NSLog(@"Failed to allocate ret_val. Probably about to die.");
+                //FIXME: Should probably abort on failure to alloc ret_val
+                NSLog(@"%@: Failed to allocate ret_val. Probably about to die.", NSStringFromSelector(_cmd));
             }
         }
-        //FIXME: Should probably abort on failure to alloc ret_val
         ffi_call(&inv_cif, (genericfunc)theIMP, ret_val, arg_vals);
         if( ret_val ){
             [self setReturnValue:ret_val];
@@ -122,7 +123,7 @@ typedef void (*genericfunc)(void);
     }
 #if DEBUG
     else {
-        NSLog(@"ffi_prep_cif failed for %@", NSStringFromSelector([self selector]));
+        NSLog(@"%@ fatal: ffi_prep_cif failed for %@", NSStringFromSelector(_cmd), NSStringFromSelector([self selector]));
         abort();
     }
 #endif    

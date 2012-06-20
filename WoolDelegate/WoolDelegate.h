@@ -63,5 +63,3 @@ typedef void (^GenericBlock)(void);
 extern NSString * const WoolDelegateHandlerKey;
 /* NSMethodSignature object for the handler */
 extern NSString * const WoolDelegateSignatureKey;
-/* A list of ffi_type * that describes the method signature for libffi */
-extern NSString * const WoolDelegateFFITypeListKey;
