@@ -7,9 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		030CCB8C14A05E990062DD9D /* libffi.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 030CCB8B14A05E990062DD9D /* libffi.dylib */; };
 		0312CE48148EDF7D0010CCC9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0312CE47148EDF7D0010CCC9 /* Foundation.framework */; };
 		0312CE4B148EDF7D0010CCC9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0312CE4A148EDF7D0010CCC9 /* main.m */; };
 		0312CE4F148EDF7D0010CCC9 /* WoolDelegate.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0312CE4E148EDF7D0010CCC9 /* WoolDelegate.1 */; };
+		0312CE57148EDF8D0010CCC9 /* WoolDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */; };
+		0398BF1E158EF8400092E420 /* WoolEncoding.m in Sources */ = {isa = PBXBuildFile; fileRef = 0398BF1C158EF7550092E420 /* WoolEncoding.m */; };
+		03EC425A14A59DDB00BDF317 /* NSInvocation+FFITranslation.m in Sources */ = {isa = PBXBuildFile; fileRef = 03EC425914A59DDB00BDF317 /* NSInvocation+FFITranslation.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -26,11 +30,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		030CCA5F1496B7A50062DD9D /* WoolBlockHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WoolBlockHelper.h; sourceTree = "<group>"; };
+		030CCB8B14A05E990062DD9D /* libffi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libffi.dylib; path = usr/lib/libffi.dylib; sourceTree = SDKROOT; };
 		0312CE43148EDF7D0010CCC9 /* WoolDelegate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = WoolDelegate; sourceTree = BUILT_PRODUCTS_DIR; };
 		0312CE47148EDF7D0010CCC9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		0312CE4A148EDF7D0010CCC9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		0312CE4D148EDF7D0010CCC9 /* WoolDelegate-Prefix.pch */ = {isa = PBXFileReference; path = "WoolDelegate-Prefix.pch"; sourceTree = "<group>"; };
+		0312CE4D148EDF7D0010CCC9 /* WoolDelegate-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WoolDelegate-Prefix.pch"; sourceTree = "<group>"; };
 		0312CE4E148EDF7D0010CCC9 /* WoolDelegate.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = WoolDelegate.1; sourceTree = "<group>"; };
+		0312CE55148EDF8D0010CCC9 /* WoolDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WoolDelegate.h; sourceTree = "<group>"; };
+		0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WoolDelegate.m; sourceTree = "<group>"; };
+		0398BF1B158EF7550092E420 /* WoolEncoding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WoolEncoding.h; sourceTree = "<group>"; };
+		0398BF1C158EF7550092E420 /* WoolEncoding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WoolEncoding.m; sourceTree = "<group>"; };
+		03EC425814A59DDB00BDF317 /* NSInvocation+FFITranslation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSInvocation+FFITranslation.h"; sourceTree = "<group>"; };
+		03EC425914A59DDB00BDF317 /* NSInvocation+FFITranslation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSInvocation+FFITranslation.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,6 +50,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				030CCB8C14A05E990062DD9D /* libffi.dylib in Frameworks */,
 				0312CE48148EDF7D0010CCC9 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -49,7 +62,6 @@
 			isa = PBXGroup;
 			children = (
 				0312CE49148EDF7D0010CCC9 /* WoolDelegate */,
-				0312CE46148EDF7D0010CCC9 /* Frameworks */,
 				0312CE44148EDF7D0010CCC9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,9 +77,11 @@
 		0312CE46148EDF7D0010CCC9 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				030CCB8B14A05E990062DD9D /* libffi.dylib */,
 				0312CE47148EDF7D0010CCC9 /* Foundation.framework */,
 			);
 			name = Frameworks;
+			path = ..;
 			sourceTree = "<group>";
 		};
 		0312CE49148EDF7D0010CCC9 /* WoolDelegate */ = {
@@ -76,6 +90,14 @@
 				0312CE4A148EDF7D0010CCC9 /* main.m */,
 				0312CE4E148EDF7D0010CCC9 /* WoolDelegate.1 */,
 				0312CE4C148EDF7D0010CCC9 /* Supporting Files */,
+				030CCA5F1496B7A50062DD9D /* WoolBlockHelper.h */,
+				03EC425814A59DDB00BDF317 /* NSInvocation+FFITranslation.h */,
+				03EC425914A59DDB00BDF317 /* NSInvocation+FFITranslation.m */,
+				0312CE55148EDF8D0010CCC9 /* WoolDelegate.h */,
+				0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */,
+				0398BF1B158EF7550092E420 /* WoolEncoding.h */,
+				0398BF1C158EF7550092E420 /* WoolEncoding.m */,
+				0312CE46148EDF7D0010CCC9 /* Frameworks */,
 			);
 			path = WoolDelegate;
 			sourceTree = "<group>";
@@ -113,6 +135,9 @@
 /* Begin PBXProject section */
 		0312CE3A148EDF7D0010CCC9 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				ORGANIZATIONNAME = "Wool Sweater Soft";
+			};
 			buildConfigurationList = 0312CE3D148EDF7D0010CCC9 /* Build configuration list for PBXProject "WoolDelegate" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
@@ -136,6 +161,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				0312CE4B148EDF7D0010CCC9 /* main.m in Sources */,
+				0312CE57148EDF8D0010CCC9 /* WoolDelegate.m in Sources */,
+				03EC425A14A59DDB00BDF317 /* NSInvocation+FFITranslation.m in Sources */,
+				0398BF1E158EF8400092E420 /* WoolEncoding.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,6 +252,7 @@
 				0312CE54148EDF7D0010CCC9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
