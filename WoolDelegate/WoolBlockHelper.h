@@ -45,14 +45,14 @@ enum {
 // Return the block's invoke function pointer.
 static void * BlockIMP(id block)
 {
-    return ((struct Block *)block)->invoke;
+    return ((__bridge struct Block *)block)->invoke;
 }
 
 
 // Return a C string representing the block's signature; NSMethodSignature
 // can use this.
 static const char * BlockSig(id blockObj){
-    struct Block *block = (void *)blockObj;
+    struct Block *block = (__bridge void *)blockObj;
     struct BlockDescriptor *descriptor = block->descriptor;
     
     assert(block->flags & BLOCK_HAS_SIGNATURE);

@@ -1,0 +1,3 @@
+- NSInvocation+FFITranslation: Arbitrary Blocks from the WoolDelegate interface won't have a slot for a SEL, but IMPs in general _will_, which will cause this to fail hard. Add an interface for invokeUsingBlock: and fix construction of arg type and value lists so this will work. @todo
+- Remove the restriction that other handler info (method signature) will not be set until the delegate is actually sent the selector? @refinement @maybe
+- A possibility for WoolDelegate class + (id) delegateConformingToProtocol: (Protocol *)p; @refinement @maybe

@@ -3,11 +3,13 @@
 //  WoolDelegate
 //
 //  Created by Joshua Caswell on 12/23/11.
-//  Copyright 2011 __MyCompanyName__. All rights reserved.
+//  Copyright 2011 Wool Sweater Soft. All rights reserved.
 //
 
 #import "NSInvocation+FFITranslation.h"
 #include <objc/objc-runtime.h>
+
+ffi_type * libffi_type_for_objc_encoding(const char * str);
 
 @implementation NSInvocation (FFITranslation)
 
@@ -42,12 +44,13 @@ static char allocations_key;
     NSMethodSignature * sig = [self methodSignature];
     NSUInteger num_used_args = [sig numberOfArguments] - 1;    // Ignore SEL
     ffi_type ** arg_types = [self Wool_allocate: sizeof(ffi_type *) * num_used_args];
-    NSUInteger i;
-    for( i = 0; i < num_used_args; i++ ){
-        // Ignore SEL
+    for( NSUInteger i = 0; i < num_used_args; i++ ){
+        // Skip over the SEL; the Block doesn't have a slot for it.
+        //!!!: Blocks don't have a slot, but a generic IMP _will_. This
+        // requires some re-working.
         NSUInteger actual_arg_idx = i;
         if( i >= 1 ){
-            actual_arg_idx++;
+            actual_arg_idx += 1;
         }
         arg_types[i] = libffi_type_for_objc_encoding([sig getArgumentTypeAtIndex:actual_arg_idx]);
     }
@@ -64,17 +67,10 @@ static char allocations_key;
     NSMethodSignature * sig = [self methodSignature];
     NSUInteger num_used_args = [sig numberOfArguments] - 1;    // Ignore SEL
     /* Allocate list of pointers big enough for the number of args. */
-    void ** arg_list = (void **)[self Wool_allocate: sizeof(void *) * num_used_args];
+    void ** arg_list = (void **)[self Wool_allocate:sizeof(void *) * num_used_args];
     NSUInteger i;
     for(i = 0; i < num_used_args; i++ ){
         // Skip over the SEL; the Block doesn't have a slot for it.
-        // SEL gets passed by objc_msgSend(), but method signature does not
-        // account for it, meaning invocation doesn't know it has the SEL.
-        // This causes an out of bounds exception in getArgument:atIndex: when
-        // I try to get arguments past numberOfArguments.
-        // One of two solutions: all Blocks must include SEL parameter (this
-        // works great) or signature must be mangled to include SEL, and the
-        // actual SEL can be ignored here.
         NSUInteger actual_arg_idx = i;
         if( i >= 1 ){
             actual_arg_idx++;
@@ -84,8 +80,8 @@ static char allocations_key;
         NSGetSizeAndAlignment([sig getArgumentTypeAtIndex:actual_arg_idx], 
                               &arg_size, 
                               NULL);
-        /* Get a piece of memory and put its address in the list. */
-        arg_list[i] = [self Wool_allocate: arg_size];
+        /* Get a piece of memory that size and put its address in the list. */
+        arg_list[i] = [self Wool_allocate:arg_size];
         /* Put the value into the allocated spot. */
         [self getArgument:arg_list[i] atIndex:actual_arg_idx];
     }
@@ -94,6 +90,7 @@ static char allocations_key;
 
 // Typedef for casting IMP in ffi_call to shut up compiler
 typedef void (*genericfunc)(void);
+
 - (void)Wool_invokeUsingIMP: (IMP)theIMP {
     
     NSMethodSignature * sig = [self methodSignature];
@@ -132,8 +129,21 @@ typedef void (*genericfunc)(void);
 
 @end
 
+
 /* ffi_type structures for common Cocoa structs */
-ffi_type CGPointFFI = (ffi_type){ .size = 0, 
+
+/* N.B.: ffi_type constructions must be created and added as possible return
+ * values from libffi_type_for_objc_encoding below for any custom structs that 
+ * will be encountered by the invocation. If libffi_type_for_objc_encoding
+ * fails to find a match, it will abort.
+ */
+#if CGFLOAT_IS_DOUBLE
+#define CGFloatFFI &ffi_type_double
+#else
+#define CGFloatFFI &ffi_type_float
+#endif
+
+static ffi_type CGPointFFI = (ffi_type){ .size = 0, 
                                   .alignment = 0, 
                                   .type = FFI_TYPE_STRUCT,
                                   .elements = (ffi_type * [3]){CGFloatFFI, 
@@ -141,14 +151,14 @@ ffi_type CGPointFFI = (ffi_type){ .size = 0,
                                                                NULL}};
 
 
-ffi_type CGSizeFFI = (ffi_type){ .size = 0, 
+static ffi_type CGSizeFFI = (ffi_type){ .size = 0, 
                                  .alignment = 0, 
                                  .type = FFI_TYPE_STRUCT,
                                  .elements = (ffi_type * [3]){CGFloatFFI, 
                                                               CGFloatFFI,
                                                               NULL}};
 
-ffi_type CGRectFFI = (ffi_type){ .size = 0, 
+static ffi_type CGRectFFI = (ffi_type){ .size = 0, 
                                  .alignment = 0, 
                                  .type = FFI_TYPE_STRUCT,
                                  .elements = (ffi_type * [3]){&CGPointFFI,
@@ -250,6 +260,9 @@ ffi_type * libffi_type_for_objc_encoding(const char * str)
     STRUCT(NSSize, &CGSizeFFI);
     STRUCT(NSRect, &CGRectFFI);
 #endif
+    
+    // Add custom structs here using 
+    // STRUCT(StructName, &ffi_typeForStruct);
     
     NSLog(@"Unknown encode string %s", str);
     abort();

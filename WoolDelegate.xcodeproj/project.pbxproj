@@ -11,8 +11,8 @@
 		0312CE48148EDF7D0010CCC9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0312CE47148EDF7D0010CCC9 /* Foundation.framework */; };
 		0312CE4B148EDF7D0010CCC9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0312CE4A148EDF7D0010CCC9 /* main.m */; };
 		0312CE4F148EDF7D0010CCC9 /* WoolDelegate.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0312CE4E148EDF7D0010CCC9 /* WoolDelegate.1 */; };
-		0312CE57148EDF8D0010CCC9 /* WoolDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */; };
-		0398BF1E158EF8400092E420 /* WoolEncoding.m in Sources */ = {isa = PBXBuildFile; fileRef = 0398BF1C158EF7550092E420 /* WoolEncoding.m */; };
+		0312CE57148EDF8D0010CCC9 /* WoolDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		0398BF1E158EF8400092E420 /* WoolObjCEncoding.m in Sources */ = {isa = PBXBuildFile; fileRef = 0398BF1C158EF7550092E420 /* WoolObjCEncoding.m */; };
 		03EC425A14A59DDB00BDF317 /* NSInvocation+FFITranslation.m in Sources */ = {isa = PBXBuildFile; fileRef = 03EC425914A59DDB00BDF317 /* NSInvocation+FFITranslation.m */; };
 /* End PBXBuildFile section */
 
@@ -39,8 +39,9 @@
 		0312CE4E148EDF7D0010CCC9 /* WoolDelegate.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = WoolDelegate.1; sourceTree = "<group>"; };
 		0312CE55148EDF8D0010CCC9 /* WoolDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WoolDelegate.h; sourceTree = "<group>"; };
 		0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WoolDelegate.m; sourceTree = "<group>"; };
-		0398BF1B158EF7550092E420 /* WoolEncoding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WoolEncoding.h; sourceTree = "<group>"; };
-		0398BF1C158EF7550092E420 /* WoolEncoding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WoolEncoding.m; sourceTree = "<group>"; };
+		0398BF1B158EF7550092E420 /* WoolObjCEncoding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WoolObjCEncoding.h; sourceTree = "<group>"; };
+		0398BF1C158EF7550092E420 /* WoolObjCEncoding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WoolObjCEncoding.m; sourceTree = "<group>"; };
+		0398BF5C159A6AB80092E420 /* Notes and problems */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Notes and problems"; sourceTree = "<group>"; };
 		03EC425814A59DDB00BDF317 /* NSInvocation+FFITranslation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSInvocation+FFITranslation.h"; sourceTree = "<group>"; };
 		03EC425914A59DDB00BDF317 /* NSInvocation+FFITranslation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSInvocation+FFITranslation.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -95,9 +96,10 @@
 				03EC425914A59DDB00BDF317 /* NSInvocation+FFITranslation.m */,
 				0312CE55148EDF8D0010CCC9 /* WoolDelegate.h */,
 				0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */,
-				0398BF1B158EF7550092E420 /* WoolEncoding.h */,
-				0398BF1C158EF7550092E420 /* WoolEncoding.m */,
+				0398BF1B158EF7550092E420 /* WoolObjCEncoding.h */,
+				0398BF1C158EF7550092E420 /* WoolObjCEncoding.m */,
 				0312CE46148EDF7D0010CCC9 /* Frameworks */,
+				0398BF5C159A6AB80092E420 /* Notes and problems */,
 			);
 			path = WoolDelegate;
 			sourceTree = "<group>";
@@ -163,7 +165,7 @@
 				0312CE4B148EDF7D0010CCC9 /* main.m in Sources */,
 				0312CE57148EDF8D0010CCC9 /* WoolDelegate.m in Sources */,
 				03EC425A14A59DDB00BDF317 /* NSInvocation+FFITranslation.m in Sources */,
-				0398BF1E158EF8400092E420 /* WoolEncoding.m in Sources */,
+				0398BF1E158EF8400092E420 /* WoolObjCEncoding.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -218,6 +220,7 @@
 		0312CE53148EDF7D0010CCC9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WoolDelegate/WoolDelegate-Prefix.pch";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -227,6 +230,7 @@
 		0312CE54148EDF7D0010CCC9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WoolDelegate/WoolDelegate-Prefix.pch";
 				PRODUCT_NAME = "$(TARGET_NAME)";

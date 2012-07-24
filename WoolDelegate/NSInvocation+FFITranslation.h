@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #include <ffi/ffi.h>
 
-@interface NSInvocation (FFITranslation)
+@interface NSInvocation (WoolFFITranslation)
 
 /* Get memory via NSMutableData and associate it with this invocation. */
 - (void *)Wool_allocate: (size_t)size;
@@ -28,19 +28,3 @@
 - (void)Wool_invokeUsingIMP: (IMP)theIMP;
 
 @end
-
-/* Translate an ObjC encoding string into a pointer to the appropriate
- * libffi type.
- */
-ffi_type * libffi_type_for_objc_encoding(const char * str);
-
-/* ffi_types for common Cocoa structs */
-#if CGFLOAT_IS_DOUBLE
-    #define CGFloatFFI &ffi_type_double
-#else
-    #define CGFloatFFI &ffi_type_float
-#endif
-
-extern ffi_type CGPointFFI;
-extern ffi_type CGSizeFFI;
-extern ffi_type CGRectFFI;

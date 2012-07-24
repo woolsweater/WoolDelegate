@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "WoolDelegate.h"
 #import <objc/runtime.h>
+#import "WoolBlockHelper.h"
 
 
 #define NSStringFromBOOL(b) ((b) ? @"YES" : @"NO")
@@ -20,6 +21,10 @@
 - (void)pommes: (NSString *)apple terre:(NSString *)earth;
 - (NSNumber *)ail:(BOOL)b avec:(int)i huile:(NSArray *)a;
 
+@end
+
+@interface NSObject (WoolShutUpCompiler)
+- (NSNumber *)frick: (BOOL)b a: (int)i frack: (NSArray *)a;
 @end
 
 static void test_respondsToInheritedSelector(WoolDelegate * d) {
@@ -39,9 +44,16 @@ static void test_respondsToSetSelector(WoolDelegate * d) {
 
 int main (int argc, const char * argv[])
 {
-    NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
+    @autoreleasepool {
     
-    WoolDelegate * d =  [[WoolDelegate alloc] init];
+    // ARC causes a compiler warning at any message send that WoolDelegate's
+    // interface doesn't declare. The variable has to be typed id or cast
+    // whenever a message send is made.
+    // This may not be an issue, though, since the primary purpose of
+    // WoolDelegate means it will be receiving messages from framework objects,
+    // i.e., from code that is already compiled and which is indeed sending its
+    // messages to id.
+    id d =  [[WoolDelegate alloc] init];
     
     test_respondsToInheritedSelector(d);
     test_respondsToDefinedSelector(d);
@@ -52,7 +64,7 @@ int main (int argc, const char * argv[])
         NSLog(@"%@", leek);
         return [leek objectAtIndex:0];
     })];
-    NSArray * poireaux_arr = [[NSArray arrayWithObjects:@"Abacus", @"Banana", @"Capuchin", nil] retain];
+    NSArray * poireaux_arr = [NSArray arrayWithObjects:@"Abacus", @"Banana", @"Capuchin", nil];
     NSLog(@"%@", poireaux_arr);
     id o = [d poireaux:poireaux_arr];
     NSLog(@"Result of poireaux: %@", o);
@@ -86,8 +98,8 @@ int main (int argc, const char * argv[])
     NSLog(@"%@", r);
     r = [d ail:NO avec:100 huile:frick_arr];
     NSLog(@"%@", r);
-    
-    [pool drain];
+        
+    }
     return 0;
 }
 

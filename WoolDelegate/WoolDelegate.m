@@ -13,7 +13,7 @@
 
 #import "WoolBlockHelper.h"
 #import "NSInvocation+FFITranslation.h"
-#import "WoolEncoding.h"
+#import "WoolObjCEncoding.h"
 
 /* Keys for the handler info dictionary: */
 /* The handler Block itself */
@@ -22,12 +22,8 @@ NSString * const WoolDelegateHandlerKey = @"HandlerKey";
 NSString * const WoolDelegateSignatureKey = @"SignatureKey";
 
 @interface WoolDelegate ()
-{
-    NSMutableDictionary * handlers_;
-    NSMutableArray * allocations_;
-}
 
-- (void *) allocate: (size_t)size;
+- (void *)allocate: (size_t)size;
 
 - (void)setSignature: (NSMethodSignature *)sig forSelector: (SEL)sel;
 - (NSMethodSignature *)signatureForSelector: (SEL)sel;
@@ -35,14 +31,18 @@ NSString * const WoolDelegateSignatureKey = @"SignatureKey";
 @end
 
 @implementation WoolDelegate
+{
+    NSMutableDictionary * handlers_;
+    NSMutableArray * allocations_;
+}
 
 @synthesize handlers = handlers_;
-
 
 - (id) init {
     
     self = [super init];
     if( !self ) return nil;
+    
     
     handlers_ = [[NSMutableDictionary alloc] init];
     allocations_ = [[NSMutableArray alloc] init];
@@ -57,6 +57,9 @@ NSString * const WoolDelegateSignatureKey = @"SignatureKey";
     [super dealloc];
 }
 
+/* Return YES for any selector which would normally result in YES and for any
+ * for which there is a handler set.
+ */
 - (BOOL)respondsToSelector: (SEL)aSelector {
     
     BOOL responds = [super respondsToSelector:aSelector];
@@ -79,18 +82,18 @@ NSString * const WoolDelegateSignatureKey = @"SignatureKey";
     return arr;
 }
 
-- (void)setConformsToProtocol: (Protocol *)p 
+- (void)setAdoptsProtocol: (Protocol *)p 
 {
     class_addProtocol([self class], p);
 }
 
 
-- (GenericBlock) handlerForSelector: (SEL)selector {
+- (GenericBlock)handlerForSelector: (SEL)selector {
     NSDictionary * handlerDict = [self handlerInfoForSelector:selector];
     return [handlerDict objectForKey:WoolDelegateHandlerKey];
 }
 
-- (NSDictionary *) handlerInfoForSelector: (SEL)selector {
+- (NSDictionary *)handlerInfoForSelector: (SEL)selector {
     return [[self handlers] objectForKey:NSStringFromSelector(selector)];
 }
 
@@ -99,7 +102,7 @@ static BOOL method_description_isNULL(struct objc_method_description desc)
     return (desc.types == NULL) && (desc.name == NULL);
 }
 
-static const char * procure_encoding_string_for_selector_from_protocol(SEL sel, Protocol * protocol)
+static const char * procure_encoding_string_for_selector_from_protocol(SEL sel,  Protocol * protocol)
 {
     static BOOL isReqVals[4] = {NO, NO, YES, YES};
     static BOOL isInstanceVals[4] = {NO, YES, NO, YES};
@@ -135,7 +138,7 @@ static const char * procure_encoding_string_for_selector_from_protocol(SEL sel, 
 }
             
 
-- (void) addForSelector: (SEL)aSelector handler: (GenericBlock)handler {
+- (void)addForSelector: (SEL)aSelector handler: (GenericBlock)handler {
     // ffi_type list and signature will be added later
     NSMutableDictionary * d;
     d = [NSMutableDictionary dictionaryWithObject:[[handler copy] autorelease]
@@ -153,10 +156,7 @@ static char delegator_key;
     objc_setAssociatedObject(delegator, &delegator_key, 
                              self, OBJC_ASSOCIATION_RETAIN);
 }
-    
 
-// Thanks to Mike Ash for the last section of this implementation 
-// https://github.com/mikeash/MABlockForwarding
 - (NSMethodSignature *)methodSignatureForSelector: (SEL)aSelector {
     
     GenericBlock handler = [self handlerForSelector:aSelector];
@@ -173,54 +173,24 @@ static char delegator_key;
     }
     
     // Try to get a type string from adopted protocols
+    BOOL mustFreeTypesString = NO;
     const char * types = NULL;
     for( Protocol * p in [self adoptedProtocols] ){
         types = procure_encoding_string_for_selector_from_protocol(aSelector,
                                                                    p);
     }
-    if( types ){
-        sig = [NSMethodSignature signatureWithObjCTypes:types];
-        [self setSignature:sig forSelector:aSelector];
-        return sig;
-    }
-        
-    
-    //TODO: Can I ask a protocol for the method signature? This would require
-    // clients to pass in a protocol to associate with a handler/SEL pair,
-    // but would reduce reliance on the Block ABI.
-    // This, however, may be _less_ reliable. The Block private specification
-    // at least states that the signature string is based on the ObjC encoding;
-    // no statment of any kind is made about objc_method_description.types
-//    Protocol * p = [self conformedProtocol];
-//    if( p ){
-//        struct objc_method_description desc;
-//        desc = protocol_getMethodDescription(p, aSelector, NO, YES);
-//        return [NSMethodSignature signatureWithObjCTypes: desc.types];
-//    }
-    // Add a setHandler:forSelector:fromProtocol: method. This will associate the
-    // handler with the protocol and use the type string that can be found there.
-    // If no protocol is passed, or the simpler setHandler:forSelector:, look
-    // through any already-added protocols to see if the selector is present.
-    // If so, use that type string. Fall back on string mangling.
-    
     // Otherwise, construct a signature based on the block's sig
-    types = BlockSig(handler);
-    types = encoding_createWithInsertedSEL(types);
-    // The types signature for the Block isn't valid for use as a ObjC method
-    // signature. For example, the Block 
-    // ^id (NSArray * leek){ return [leek objectAtIndex:0]; }
-    //  has a type string "@16@?0@8", which looks like:
-    // Return type object, the Block, first parameter object. Note no SEL!
-    // This is causing problems later when pulling the args out of the invocation.
-    // The SEL needs to be _inserted_ into the type string after the block
-    // instance. NSGetSizeAndAlignment will help here, and Mike Ash has a 
-    // wrapper for that which might make it even easier.
-    // Is it possible to require the Blocks to have a signature (like
-    // objc_msgSend() does? I.e., typedef id (^HandlerBlock)(SEL sel, ...);
-    // I think bbum has something about this in his post on imp_implementationWithBlock()
-    sig = [NSMethodSignature signatureWithObjCTypes: types];
+    if( !types ){
+        types = BlockSig(handler);
+        types = encoding_createWithInsertedSEL(types);
+        mustFreeTypesString = YES;
+    }
+    
+    // Construct NSMethodSignature from the type string, and save it
+    // for future use. free string if it was created.
+    sig = [NSMethodSignature signatureWithObjCTypes:types];
     [self setSignature:sig forSelector:aSelector];
-    free((void *)types);
+    if( mustFreeTypesString ){ free((void *)types); }
     return sig;
 }
 
@@ -234,15 +204,21 @@ typedef void (*genericfunc)(void);
         return [super forwardInvocation:anInvocation];
     }
     
-    //TODO: Conditional compilation to use imp_implementationWithBlock()
+    //TODO: Check for imp_implementationWithBlock() and use it
     // where available (Lion and iOS >= 4.0)
+    // This is problematic; imp_implementationWithBlock() handles the SEL
+    // problem differently. It may actually not be worth the trouble.
     IMP handlerIMP = BlockIMP(handler);
+//    if( imp_implementationWithBlock != NULL ){
+//        handlerIMP = imp_implementationWithBlock(handler);
+//    }
     
     [anInvocation Wool_invokeUsingIMP:handlerIMP];
     
 }  
 
-// Thanks to Mike Ash for this idea as well.
+//TODO: Not needed; remove.
+// Thanks to Mike Ash for this idea.
 - (void *)allocate: (size_t)size {
     
     NSMutableData * dat = [NSMutableData dataWithLength:size];
