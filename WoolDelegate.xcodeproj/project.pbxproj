@@ -12,6 +12,7 @@
 		0312CE4B148EDF7D0010CCC9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0312CE4A148EDF7D0010CCC9 /* main.m */; };
 		0312CE4F148EDF7D0010CCC9 /* WoolDelegate.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 0312CE4E148EDF7D0010CCC9 /* WoolDelegate.1 */; };
 		0312CE57148EDF8D0010CCC9 /* WoolDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		038D655A16B7AFD9007C5F9A /* WoolObjCEncodingInsertSEL.m in Sources */ = {isa = PBXBuildFile; fileRef = 038D655916B7AFD9007C5F9A /* WoolObjCEncodingInsertSEL.m */; };
 		0398BF1E158EF8400092E420 /* WoolObjCEncoding.m in Sources */ = {isa = PBXBuildFile; fileRef = 0398BF1C158EF7550092E420 /* WoolObjCEncoding.m */; };
 		03EC425A14A59DDB00BDF317 /* NSInvocation+FFITranslation.m in Sources */ = {isa = PBXBuildFile; fileRef = 03EC425914A59DDB00BDF317 /* NSInvocation+FFITranslation.m */; };
 /* End PBXBuildFile section */
@@ -39,6 +40,9 @@
 		0312CE4E148EDF7D0010CCC9 /* WoolDelegate.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = WoolDelegate.1; sourceTree = "<group>"; };
 		0312CE55148EDF8D0010CCC9 /* WoolDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WoolDelegate.h; sourceTree = "<group>"; };
 		0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WoolDelegate.m; sourceTree = "<group>"; };
+		033B29B0170E0CF0005A0FF5 /* MA_LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MA_LICENSE.txt; sourceTree = "<group>"; };
+		033B29B1170E19BE005A0FF5 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		038D655916B7AFD9007C5F9A /* WoolObjCEncodingInsertSEL.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WoolObjCEncodingInsertSEL.m; sourceTree = "<group>"; };
 		0398BF1B158EF7550092E420 /* WoolObjCEncoding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WoolObjCEncoding.h; sourceTree = "<group>"; };
 		0398BF1C158EF7550092E420 /* WoolObjCEncoding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WoolObjCEncoding.m; sourceTree = "<group>"; };
 		0398BF5C159A6AB80092E420 /* Notes and problems */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Notes and problems"; sourceTree = "<group>"; };
@@ -98,8 +102,11 @@
 				0312CE56148EDF8D0010CCC9 /* WoolDelegate.m */,
 				0398BF1B158EF7550092E420 /* WoolObjCEncoding.h */,
 				0398BF1C158EF7550092E420 /* WoolObjCEncoding.m */,
+				038D655916B7AFD9007C5F9A /* WoolObjCEncodingInsertSEL.m */,
 				0312CE46148EDF7D0010CCC9 /* Frameworks */,
 				0398BF5C159A6AB80092E420 /* Notes and problems */,
+				033B29B0170E0CF0005A0FF5 /* MA_LICENSE.txt */,
+				033B29B1170E19BE005A0FF5 /* LICENSE.txt */,
 			);
 			path = WoolDelegate;
 			sourceTree = "<group>";
@@ -166,6 +173,7 @@
 				0312CE57148EDF8D0010CCC9 /* WoolDelegate.m in Sources */,
 				03EC425A14A59DDB00BDF317 /* NSInvocation+FFITranslation.m in Sources */,
 				0398BF1E158EF8400092E420 /* WoolObjCEncoding.m in Sources */,
+				038D655A16B7AFD9007C5F9A /* WoolObjCEncodingInsertSEL.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

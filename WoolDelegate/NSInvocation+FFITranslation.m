@@ -1,19 +1,34 @@
 //
 //  NSInvocation+FFITranslation.m
-//  WoolDelegate
 //
-//  Created by Joshua Caswell on 12/23/11.
-//  Copyright 2011 Wool Sweater Soft. All rights reserved.
-//
+//  Copyright (c) 2011 Joshua Caswell
 
 #import "NSInvocation+FFITranslation.h"
+#include <ffi/ffi.h>
 #include <objc/objc-runtime.h>
+
+@interface NSInvocation (FFITranslationPrivate)
+
+/* Get memory via NSMutableData and associate it with this invocation. */
+- (void *)Wool_allocate: (size_t)size;
+
+/* Construct a list of ffi_type * describing the method signature of this invocation. */
+- (ffi_type **)Wool_buildFFIArgTypeList;
+
+/*
+ * Put the values of the invocation's arguments into the format required
+ * by libffi: a list of pointers to pieces of memory holding the values.
+ */
+- (void **)Wool_buildArgValList;
+
+@end
 
 ffi_type * libffi_type_for_objc_encoding(const char * str);
 
-@implementation NSInvocation (FFITranslation)
+@implementation NSInvocation (FFITranslationPrivate)
 
-/* Use associated objects facility to manage memory needed for ffi argument
+/* 
+ * Use associated objects facility to manage memory needed for ffi argument
  * type and value lists. The memory is acquired via NSMutableData, which are
  * put into an NSMutableArray associated with this NSInvocation instance.
  * All memory allocations for the libffi translation process are thus tied
@@ -29,13 +44,14 @@ static char allocations_key;
                                  allocations, OBJC_ASSOCIATION_RETAIN);
     }
     
-    NSMutableData * dat = [NSMutableData dataWithLength: size];
+    NSMutableData * dat = [NSMutableData dataWithLength:size];
     [allocations addObject:dat];
     
     return [dat mutableBytes];
 }
     
-/* Construct a list of ffi_type * describing the method signature of this
+/* 
+ * Construct a list of ffi_type * describing the method signature of this
  * invocation. Steps through each argument in turn and interprets the ObjC
  * type encoding.
  */
@@ -45,9 +61,10 @@ static char allocations_key;
     NSUInteger num_used_args = [sig numberOfArguments] - 1;    // Ignore SEL
     ffi_type ** arg_types = [self Wool_allocate: sizeof(ffi_type *) * num_used_args];
     for( NSUInteger i = 0; i < num_used_args; i++ ){
-        // Skip over the SEL; the Block doesn't have a slot for it.
+        // Skip over the SEL; the Block doesn't have a slot for it, so we
+        // don't want to pass it in later.
         //!!!: Blocks don't have a slot, but a generic IMP _will_. This
-        // requires some re-working.
+        // requires some re-working for use apart from Blocks.
         NSUInteger actual_arg_idx = i;
         if( i >= 1 ){
             actual_arg_idx += 1;
@@ -58,7 +75,8 @@ static char allocations_key;
     return arg_types;
 }
     
-/* Put the values of the arguments to this invocation into the format required
+/* 
+ * Put the values of the arguments to this invocation into the format required
  * by libffi: a list of pointers to pieces of memory containing the values.
  */
 - (void **)Wool_buildArgValList
@@ -88,6 +106,12 @@ static char allocations_key;
     return arg_list;
 }
 
+@end
+
+//MARK: Public category
+
+@implementation NSInvocation (FFITranslation)
+
 // Typedef for casting IMP in ffi_call to shut up compiler
 typedef void (*genericfunc)(void);
 
@@ -98,32 +122,29 @@ typedef void (*genericfunc)(void);
     ffi_type ** arg_types = [self Wool_buildFFIArgTypeList];
     ffi_type * ret_type = libffi_type_for_objc_encoding([sig methodReturnType]);
     ffi_cif inv_cif;
-    if( FFI_OK == ffi_prep_cif(&inv_cif, FFI_DEFAULT_ABI, 
-                               (unsigned int)num_used_args, 
-                               ret_type, arg_types) )
-    {
-        void ** arg_vals = [self Wool_buildArgValList];
-        NSUInteger ret_size = [sig methodReturnLength];
-        void * ret_val = NULL;
-        if( ret_size > 0 ){
-            ret_val = calloc(1, ret_size);
-            if( !ret_val ){
-                //FIXME: Should probably abort on failure to alloc ret_val
-                NSLog(@"%@: Failed to allocate ret_val. Probably about to die.", NSStringFromSelector(_cmd));
-            }
-        }
-        ffi_call(&inv_cif, (genericfunc)theIMP, ret_val, arg_vals);
-        if( ret_val ){
-            [self setReturnValue:ret_val];
-            free(ret_val);
-        }
+    ffi_status prep_status = ffi_prep_cif(&inv_cif, FFI_DEFAULT_ABI,
+                                          (unsigned int)num_used_args, 
+                                          ret_type, arg_types);
+    NSAssert(prep_status == FFI_OK, @"ffi_prep_cif failed in %@ for invocation of %@",
+                                    NSStringFromSelector(_cmd),
+                                    NSStringFromSelector([self selector]));
+    
+    
+    void ** arg_vals = [self Wool_buildArgValList];
+    NSUInteger ret_size = [sig methodReturnLength];
+    void * ret_val = NULL;
+    if( ret_size > 0 ){
+        ret_val = calloc(1, ret_size);
+        NSAssert(ret_val != NULL, @"%@ failed to allocate space for return value for invocation of %@",
+                                  NSStringFromSelector(_cmd),
+                                  NSStringFromSelector([self selector]));
     }
-#if DEBUG
-    else {
-        NSLog(@"%@ fatal: ffi_prep_cif failed for %@", NSStringFromSelector(_cmd), NSStringFromSelector([self selector]));
-        abort();
+    
+    ffi_call(&inv_cif, (genericfunc)theIMP, ret_val, arg_vals);
+    if( ret_val ){
+        [self setReturnValue:ret_val];
+        free(ret_val);
     }
-#endif    
 
 }
 
@@ -170,9 +191,12 @@ static ffi_type CGRectFFI = (ffi_type){ .size = 0,
  */
 ffi_type * libffi_type_for_objc_encoding(const char * str)
 {
-    // Slightly modfied version of Mike Ash's code from
-    // https://github.com/mikeash/MABlockClosure/blob/master/MABlockClosure.m
-    // His code dynamically allocates ffi_types representing the structures above.
+    /* Slightly modfied version of Mike Ash's code from
+     * https://github.com/mikeash/MABlockClosure/blob/master/MABlockClosure.m
+     * Copyright (c) 2010, Michael Ash
+     * All rights reserved.
+     * Distributed under a BSD license. See MA_LICENSE.txt for details.
+     */
 #define SINT(type) do { \
     if(str[0] == @encode(type)[0]) \
     { \
@@ -186,7 +210,7 @@ ffi_type * libffi_type_for_objc_encoding(const char * str)
             return &ffi_type_sint64; \
         else \
         { \
-            NSLog(@"Unknown size for type %s", #type); \
+            NSLog(@"fatal: %s, unknown size for type %s", __func__, #type); \
             abort(); \
         } \
     } \
@@ -205,7 +229,7 @@ ffi_type * libffi_type_for_objc_encoding(const char * str)
             return &ffi_type_uint64; \
         else \
         { \
-            NSLog(@"Unknown size for type %s", #type); \
+            NSLog(@"fatal: %s, unknown size for type %s", __func__, #type); \
             abort(); \
         } \
     } \
@@ -251,6 +275,8 @@ ffi_type * libffi_type_for_objc_encoding(const char * str)
     
     COND(void, void);
     
+    // Mike Ash's code dynamically allocates ffi_types representing the
+    // structures rather than statically defining them.
     STRUCT(CGPoint, &CGPointFFI);
     STRUCT(CGSize, &CGSizeFFI);
     STRUCT(CGRect, &CGRectFFI);
@@ -264,6 +290,8 @@ ffi_type * libffi_type_for_objc_encoding(const char * str)
     // Add custom structs here using 
     // STRUCT(StructName, &ffi_typeForStruct);
     
-    NSLog(@"Unknown encode string %s", str);
+    NSLog(@"fatal: %s, unknown encode string %s", __func__, str);
     abort();
 }
+
+/* End code from Mike Ash */

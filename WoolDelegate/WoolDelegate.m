@@ -1,14 +1,10 @@
 //
 //  WoolDelegate.m
-//  WoolDelegate
 //
-//  Created by Joshua Caswell on 12/6/11.
-//  Copyright 2011 Wool Sweater Soft. All rights reserved.
-//
+//  Copyright (c) 2011 Joshua Caswell
 
 #import "WoolDelegate.h"
 
-#include <ffi/ffi.h>
 #import <objc/runtime.h>
 
 #import "WoolBlockHelper.h"
@@ -23,44 +19,39 @@ NSString * const WoolDelegateSignatureKey = @"SignatureKey";
 
 @interface WoolDelegate ()
 
-- (void *)allocate: (size_t)size;
-
-- (void)setSignature: (NSMethodSignature *)sig forSelector: (SEL)sel;
-- (NSMethodSignature *)signatureForSelector: (SEL)sel;
+- (void)setSignature:(NSMethodSignature *)sig forSelector:(SEL)sel;
+- (NSMethodSignature *)signatureForSelector:(SEL)sel;
 
 @end
 
 @implementation WoolDelegate
 {
-    NSMutableDictionary * handlers_;
-    NSMutableArray * allocations_;
+    NSMutableDictionary * _handlers;
 }
 
-@synthesize handlers = handlers_;
+@synthesize handlers = _handlers;
 
-- (id) init {
+- (id)init {
     
     self = [super init];
     if( !self ) return nil;
     
     
-    handlers_ = [[NSMutableDictionary alloc] init];
-    allocations_ = [[NSMutableArray alloc] init];
+    _handlers = [[NSMutableDictionary alloc] init];
     
     return self;
 }
 
 - (void)dealloc {
     
-    [handlers_ release];
-    [allocations_ release];
+    [_handlers release];
     [super dealloc];
 }
 
 /* Return YES for any selector which would normally result in YES and for any
  * for which there is a handler set.
  */
-- (BOOL)respondsToSelector: (SEL)aSelector {
+- (BOOL)respondsToSelector:(SEL)aSelector {
     
     BOOL responds = [super respondsToSelector:aSelector];
     if( !responds ){
@@ -74,7 +65,6 @@ NSString * const WoolDelegateSignatureKey = @"SignatureKey";
 
 - (NSArray *)adoptedProtocols 
 {
-    
     unsigned int count;
     Protocol ** protocols = class_copyProtocolList([self class], &count);
     NSArray * arr = [NSArray arrayWithObjects:protocols count:count];
@@ -82,18 +72,17 @@ NSString * const WoolDelegateSignatureKey = @"SignatureKey";
     return arr;
 }
 
-- (void)setAdoptsProtocol: (Protocol *)p 
+- (void)setAdoptsProtocol:(Protocol *)p 
 {
     class_addProtocol([self class], p);
 }
 
-
-- (GenericBlock)handlerForSelector: (SEL)selector {
+- (GenericBlock)handlerForSelector:(SEL)selector {
     NSDictionary * handlerDict = [self handlerInfoForSelector:selector];
     return [handlerDict objectForKey:WoolDelegateHandlerKey];
 }
 
-- (NSDictionary *)handlerInfoForSelector: (SEL)selector {
+- (NSDictionary *)handlerInfoForSelector:(SEL)selector {
     return [[self handlers] objectForKey:NSStringFromSelector(selector)];
 }
 
@@ -104,6 +93,7 @@ static BOOL method_description_isNULL(struct objc_method_description desc)
 
 static const char * procure_encoding_string_for_selector_from_protocol(SEL sel,  Protocol * protocol)
 {
+    // Try all combinations of "is required" and "is an instance method".
     static BOOL isReqVals[4] = {NO, NO, YES, YES};
     static BOOL isInstanceVals[4] = {NO, YES, NO, YES};
     struct objc_method_description desc = {NULL, NULL};
@@ -120,7 +110,7 @@ static const char * procure_encoding_string_for_selector_from_protocol(SEL sel, 
     return desc.types;
 }
 
-- (void)addForSelector: (SEL)aSelector fromProtocol: (Protocol *)protocol handler: (GenericBlock)handler
+- (void)addForSelector:(SEL)aSelector fromProtocol:(Protocol *)protocol handler:(GenericBlock)handler
 {
     [self addForSelector:aSelector handler:handler];
     if( protocol ){
@@ -138,7 +128,7 @@ static const char * procure_encoding_string_for_selector_from_protocol(SEL sel, 
 }
             
 
-- (void)addForSelector: (SEL)aSelector handler: (GenericBlock)handler {
+- (void)addForSelector:(SEL)aSelector handler:(GenericBlock)handler {
     // ffi_type list and signature will be added later
     NSMutableDictionary * d;
     d = [NSMutableDictionary dictionaryWithObject:[[handler copy] autorelease]
@@ -146,18 +136,18 @@ static const char * procure_encoding_string_for_selector_from_protocol(SEL sel, 
     //TODO: Assert that block sig and selector sig match
     // Note: In fact, they won't match exactly; will have to look into using 
     // NSGetSizeAndAlignment to compare.
-    [handlers_ setObject:d
+    [_handlers setObject:d
                   forKey:NSStringFromSelector(aSelector)];
 }
 
 static char delegator_key;
-- (void) associateSelfWithDelegator: (id)delegator {
+- (void)associateSelfWithDelegator:(id)delegator {
     // Tie delegate's lifetime to that of the object for which it delegates
     objc_setAssociatedObject(delegator, &delegator_key, 
                              self, OBJC_ASSOCIATION_RETAIN);
 }
 
-- (NSMethodSignature *)methodSignatureForSelector: (SEL)aSelector {
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector {
     
     GenericBlock handler = [self handlerForSelector:aSelector];
     
@@ -194,8 +184,7 @@ static char delegator_key;
     return sig;
 }
 
-typedef void (*genericfunc)(void);
-- (void)forwardInvocation: (NSInvocation *)anInvocation {
+- (void)forwardInvocation:(NSInvocation *)anInvocation {
     
     SEL sel = [anInvocation selector];
     GenericBlock handler = [self handlerForSelector:sel];
@@ -204,39 +193,25 @@ typedef void (*genericfunc)(void);
         return [super forwardInvocation:anInvocation];
     }
     
-    //TODO: Check for imp_implementationWithBlock() and use it
-    // where available (Lion and iOS >= 4.0)
-    // This is problematic; imp_implementationWithBlock() handles the SEL
-    // problem differently. It may actually not be worth the trouble.
+    // imp_implementationWithBlock() would be a great choice
+    // here but it is problematic; it handles the SEL problem differently,
+    // passing the Block in the self slot and the reciever of the message in
+    // _cmd. Using it will require rewriting Wool_invokeUsingIMP: and others.
     IMP handlerIMP = BlockIMP(handler);
-//    if( imp_implementationWithBlock != NULL ){
-//        handlerIMP = imp_implementationWithBlock(handler);
-//    }
     
     [anInvocation Wool_invokeUsingIMP:handlerIMP];
     
-}  
-
-//TODO: Not needed; remove.
-// Thanks to Mike Ash for this idea.
-- (void *)allocate: (size_t)size {
-    
-    NSMutableData * dat = [NSMutableData dataWithLength:size];
-    [allocations_ addObject:dat];
-    return [dat mutableBytes];
 }
 
-- (NSMethodSignature *)signatureForSelector: (SEL)sel
+- (NSMethodSignature *)signatureForSelector:(SEL)sel
 {
     return [[self handlerInfoForSelector:sel] objectForKey:WoolDelegateSignatureKey];
 }
 
-- (void)setSignature: (NSMethodSignature *)sig forSelector: (SEL)sel
+- (void)setSignature:(NSMethodSignature *)sig forSelector:(SEL)sel
 {
-    NSMutableDictionary * d = [handlers_ objectForKey:NSStringFromSelector(sel)];
+    NSMutableDictionary * d = [_handlers objectForKey:NSStringFromSelector(sel)];
     [d setObject:sig forKey:WoolDelegateSignatureKey];
 }
 
 @end
-
-

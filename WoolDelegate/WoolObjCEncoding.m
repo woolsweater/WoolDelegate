@@ -1,13 +1,31 @@
 //
 //  WoolObjCEncoding.m
-//  EncodeStringMangling
 //
-//  Created by Joshua Caswell on 6/12/12.
-//
+// Adapted from Apple Open Source code by Joshua Caswell in June 2012. See
+// notice below for license information.
+// Portions Copyright (c) 2012 Joshua Caswell
+
+/* 
+ * Portions Copyright (c) 1999-2007 Apple Computer, Inc. All Rights
+ * Reserved.
+ *
+ * This file contains Original Code and/or Modifications of Original Code
+ * as defined in and that are subject to the Apple Public Source License
+ * Version 2.0 (the 'License'). You may not use this file except in
+ * compliance with the License. Please obtain a copy of the License at
+ * http://www.opensource.apple.com/apsl/ and read it before using this
+ * file.
+ *
+ * The Original Code and all software distributed under the License are
+ * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
+ * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
+ * Please see the License for the specific language governing rights and
+ * limitations under the License.
+ */
 
 #import "WoolObjCEncoding.h"
-
-//FIXME: Need to include Apple License information.
 
 /* Processes a compound type encoding, returning the number of characters it 
  * occupies in the string.
@@ -238,72 +256,4 @@ unsigned int encoding_numberOfArguments(const char *typedesc)
     }
     
     return nargs;
-}
-
-static char * SELenc = @encode(SEL);
-// This doesn't account for negative offsets, although it's not clear
-// when those might crop up. According to bbum, the offsets are meaningless 
-// anyways.
-char * encoding_createWithInsertedSEL(const char * original_encoding)
-{
-    NSUInteger alignedSELsize;
-    NSGetSizeAndAlignment(SELenc, NULL, &alignedSELsize);
-    size_t len_SELenc = strlen(SELenc);
-    
-    // The new string will need to be the length of the old one plus
-    // the length of a SEL's encode string plus the difference between the
-    // string lengths of the old and new stack sizes (max 1) plus the 
-    // length of the new biggest offset (which is a maximum of 1 longer
-    // than the current biggest offset, which is extremely likely to be
-    // two digits). Call that 4 bytes just to be safe.
-    size_t len_new_string;
-    len_new_string = strlen(original_encoding) + strlen(SELenc) + 5;
-    
-    char * new_encoding = calloc(len_new_string, sizeof(char));
-    // Keep track of current end of construction
-    char * new_enc_p = new_encoding;
-    
-    // Place return type in new string
-    new_enc_p = encoding_getReturnType(original_encoding, new_enc_p, len_new_string);
-    
-    // Get stack length and increment it
-    int stack_size = encoding_stackSize(original_encoding);
-    stack_size += alignedSELsize;
-    // Put it into the string
-    size_t len_stack_size = log10(stack_size) + 1;
-    snprintf(new_enc_p, len_stack_size + 1, "%d", stack_size);
-    new_enc_p += len_stack_size;
-    
-    // Place first arg
-    int offset;    // Offset is saved here for next argument (the SEL)
-    char * arg1 = encoding_findArgument(original_encoding, 1, &offset);
-    char * arg0 = encoding_selfArgument(original_encoding);
-    size_t len_arg0 = arg1 - arg0;
-    strncpy(new_enc_p, arg0, len_arg0);
-    new_enc_p += len_arg0;
-    
-    // Place SEL's encoding
-    strncpy(new_enc_p, SELenc, len_SELenc);
-    new_enc_p += len_SELenc;
-    // Re-use original arg1 offset
-    size_t len_offset = log10(offset) + 1;
-    snprintf(new_enc_p, len_offset + 1, "%d", offset);
-    new_enc_p += len_offset;
-    
-    // Note end of new string to keep track of how much room is left
-    char * end_new_encstring = new_encoding + (len_new_string * sizeof(char));
-    // Loop over the rest of the args
-    unsigned int numargs = encoding_numberOfArguments(original_encoding);
-    for( int i = 1; i < numargs; i++ ){
-        char * arg = encoding_findArgument(original_encoding, i, &offset);
-        // Copy this encoded arg into the new string
-        new_enc_p = arg_getType(arg, new_enc_p, end_new_encstring - new_enc_p);
-        offset += alignedSELsize;
-        len_offset = (int)(log10(offset) + 1);
-        snprintf(new_enc_p, len_offset + 1, "%d", offset);
-        new_enc_p += len_offset;
-    }
-    new_enc_p = NULL;
-    
-    return new_encoding;
 }

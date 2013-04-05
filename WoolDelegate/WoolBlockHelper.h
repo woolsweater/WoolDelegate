@@ -1,21 +1,28 @@
-//
 //  WoolBlockHelper.h
-//  WoolDelegate
-//
-//  Created by Joshua Caswell on 12/12/11.
-//
 
 #ifndef WoolDelegate_WoolBlockHelper_h
 #define WoolDelegate_WoolBlockHelper_h
 
-/* The information in this header largely duplicates the private Blocks header
+/* 
+ * The information in this header largely duplicates the private Blocks header
  * defining the ABI for Blocks. While the ABI is an implementation detail, it
  * is a _compile-time_ detail. An executable will not break in the field.
  */
 
-/* Below code thanks very much to Mike Ash's MABlockForwarding project
- * https://github.com/mikeash/MABlockForwarding and
+#if !__has_feature(objc_arc)
+#define __bridge
+#endif // Exclude if compiled with ARC
+
+/* 
+ * Below code thanks very much to Mike Ash's MABlockForwarding and
+ * MABlockClosure projects
+ * https://github.com/mikeash/MABlockForwarding
  * http://www.mikeash.com/pyblog/friday-qa-2011-10-28-generic-block-proxying.html
+ * https://github.com/mikeash/MABlockClosure
+ *
+ * Copyright (c) 2010, Michael Ash
+ * All rights reserved.
+ * Distributed under a BSD license. See MA_LICENSE.txt for details.
  */
 
 struct BlockDescriptor
@@ -66,5 +73,8 @@ static const char * BlockSig(id blockObj){
 
 /* End code from Mike Ash */
 
+#if !__has_feature(objc_arc)
+#undef __bridge
+#endif // Exclude if compiled with ARC
 
 #endif /* WoolDelegate_WoolBlockHelper_h */

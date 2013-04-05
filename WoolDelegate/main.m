@@ -2,9 +2,7 @@
 //  main.m
 //  WoolDelegate
 //
-//  Created by Joshua Caswell on 12/6/11.
-//  Copyright 2011 __MyCompanyName__. All rights reserved.
-//
+//  Copyright (c) 2011 Joshua Caswell.
 
 #import <Foundation/Foundation.h>
 #import "WoolDelegate.h"
@@ -13,6 +11,8 @@
 
 
 #define NSStringFromBOOL(b) ((b) ? @"YES" : @"NO")
+
+extern id objc_msgSend(id, SEL, ...);
 
 @protocol Allia <NSObject>
 
@@ -23,58 +23,58 @@
 
 @end
 
-@interface NSObject (WoolShutUpCompiler)
+@interface NSObject (WoolShutUpARC)
 - (NSNumber *)frick: (BOOL)b a: (int)i frack: (NSArray *)a;
 @end
 
 static void test_respondsToInheritedSelector(WoolDelegate * d) {
     
-    NSLog(@"%@", NSStringFromBOOL([d respondsToSelector:@selector(class)]));
+    NSLog(@"Responds to inherited selector? %@", NSStringFromBOOL([d respondsToSelector:@selector(class)]));
 }
 
 static void test_respondsToDefinedSelector(WoolDelegate * d) {
     
-    NSLog(@"%@", NSStringFromBOOL([d respondsToSelector:@selector(handlerForSelector:)]));
+    NSLog(@"Responds to selector in class definition? %@", NSStringFromBOOL([d respondsToSelector:@selector(handlerForSelector:)]));
 }
 
 static void test_respondsToSetSelector(WoolDelegate * d) {
     
-    NSLog(@"%@", NSStringFromBOOL([d respondsToSelector:@selector(estragon)]));
+    NSLog(@"Responds to selector set at runtime? %@", NSStringFromBOOL([d respondsToSelector:@selector(estragon)]));
 }
 
 int main (int argc, const char * argv[])
 {
     @autoreleasepool {
     
-    // ARC causes a compiler warning at any message send that WoolDelegate's
+    // ARC causes a compiler error at any message send that WoolDelegate's
     // interface doesn't declare. The variable has to be typed id or cast
     // whenever a message send is made.
     // This may not be an issue, though, since the primary purpose of
     // WoolDelegate means it will be receiving messages from framework objects,
-    // i.e., from code that is already compiled and which is indeed sending its
-    // messages to id.
+    // i.e., from code that is already compiled (and which is indeed sending its
+    // messages to id).
+        
     id d =  [[WoolDelegate alloc] init];
     
     test_respondsToInheritedSelector(d);
     test_respondsToDefinedSelector(d);
-    [d addForSelector:@selector(estragon) handler:(GenericBlock)^{ NSLog(@"%d", 10); }];
+    [d addForSelector:@selector(estragon) handler:(GenericBlock)^{ NSLog(@"estragon: %d", 10); }];
     test_respondsToSetSelector(d);
-    //[d performSelector:@selector(estragon)];
+    [d performSelector:@selector(estragon)];
     [d addForSelector:@selector(poireaux:) fromProtocol:@protocol(Allia) handler:(GenericBlock)(^id (NSArray * leek) {
-        NSLog(@"%@", leek);
+        NSLog(@"poireaux:'s received array: %@", leek);
         return [leek objectAtIndex:0];
     })];
     NSArray * poireaux_arr = [NSArray arrayWithObjects:@"Abacus", @"Banana", @"Capuchin", nil];
-    NSLog(@"%@", poireaux_arr);
     id o = [d poireaux:poireaux_arr];
     NSLog(@"Result of poireaux: %@", o);
     
     [d addForSelector:@selector(oignon:) fromProtocol:@protocol(Allia) handler:(GenericBlock)^(NSString * onion){
-        NSLog(@"%@", [onion lowercaseString]);
+        NSLog(@"oignon:'s lowercased argument: %@", [onion lowercaseString]);
     }];
     [d oignon:@"SUPERCALIFRAGILISTICEXPIALIDOCIOUS!"];
     [d addForSelector:@selector(pommes:terre:) handler:(GenericBlock)^(NSString * potato, NSString * earth){
-        NSLog(@"%@", [potato stringByAppendingString:earth]);
+        NSLog(@"pommes:terre:'s cat'd arguments: %@", [potato stringByAppendingString:earth]);
     }];
     
     [d pommes:@"Hello, " terre:@"Bird"];
@@ -85,19 +85,22 @@ int main (int argc, const char * argv[])
         return (b ? [NSNumber numberWithInt:i] : [NSNumber numberWithUnsignedInteger:[arr count]]);
     })];
     NSNumber * r;
-    r = [d frick:YES a:10 frack:frick_arr];
-    NSLog(@"res: %@", r);
-    r = [d frick:NO a:100 frack:frick_arr];
-    NSLog(@"res: %@", r);
+    int a_arg = 10;
+    r = [d frick:YES a:a_arg frack:frick_arr];
+    NSLog(@"Expected: %d; Actual: %@", a_arg, r);
+    a_arg = 100;
+    r = [d frick:NO a:a_arg frack:frick_arr];
+    NSLog(@"Expected: %ld; Actual: %@", [frick_arr count], r);
     
     [d addForSelector:@selector(ail:avec:huile:) fromProtocol:@protocol(Allia) handler:(GenericBlock)(^NSNumber * (BOOL b, int i, NSArray * arr){
         return (b ? [NSNumber numberWithInt:i] : [NSNumber numberWithUnsignedInteger:[arr count]]);
     })];
     
-    r = [d ail:YES avec:10 huile:frick_arr];
-    NSLog(@"%@", r);
-    r = [d ail:NO avec:100 huile:frick_arr];
-    NSLog(@"%@", r);
+    a_arg = 10;
+    r = [d ail:YES avec:a_arg huile:frick_arr];
+    NSLog(@"Expected: %d; Actual: %@", a_arg, r);
+    r = [d ail:NO avec:a_arg huile:frick_arr];
+    NSLog(@"Expected: %ld; Actual: %@", [frick_arr count], r);
         
     }
     return 0;
